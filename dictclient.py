@@ -16,9 +16,11 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import socket, re
+import re
+import socket
 
 version = '1.0.2'
+
 
 def dequote(str):
     """Will remove single or double quotes from the start and end of a string
@@ -30,11 +32,13 @@ def dequote(str):
         str = str[0:-1]
     return str
 
+
 def enquote(str):
     """This function will put a string in double quotes, properly
     escaping any existing double quotes with a backslash.  It will
     return the result."""
     return '"' + str.replace('"', "\\\"") + '"'
+
 
 class Connection:
     """This class is used to establish a connection to a database server.
@@ -42,7 +46,7 @@ class Connection:
     Instantiating it takes two optional arguments: a hostname (a string)
     and a port (an int).  The hostname defaults to localhost
     and the port to 2628, the port specified in RFC."""
-    def __init__(self, hostname = 'localhost', port = 2628):
+    def __init__(self, hostname='localhost', port=2628):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((hostname, port))
         self.rfile = self.sock.makefile("r")
@@ -64,7 +68,7 @@ class Connection:
         code, text = self.getresultcode()
         if code < 200 or code >= 300:
             raise Exception("Got '%s' when 200-class response expected"
-                            % line)
+                            % code)
         return [code, text]
 
     def get100block(self):
@@ -153,8 +157,8 @@ class Connection:
         # We use self.dbdescs explicitly since we don't want to
         # generate net traffic with this request!
 
-        if dbname != '*' and dbname != '!' and \
-               not dbname in list(self.dbdescs.keys()):
+        if (dbname != '*' and dbname != '!' and
+                not dbname in list(self.dbdescs.keys())):
             raise Exception("Invalid database name '%s'" % dbname)
 
         self.dbobjs[dbname] = Database(self, dbname)
@@ -216,8 +220,8 @@ class Connection:
         self.getdbdescs()               # Prime the cache
         if not strategy in list(self.getstratdescs().keys()):
             raise Exception("Invalid strategy '%s'" % strategy)
-        if database != '*' and database != '!' and \
-               not database in list(self.getdbdescs().keys()):
+        if (database != '*' and database != '!' and
+                not database in list(self.getdbdescs().keys())):
             raise Exception("Invalid database name '%s'" % database)
 
         self.sendcommand("MATCH %s %s %s" % (enquote(database),
@@ -239,6 +243,7 @@ class Connection:
         if self.getresultcode()[0] != 250:
             raise Exception("Unexpected end-of-list code %d" % code)
         return retval
+
 
 class Database:
     """An object corresponding to a particular database in a server."""
@@ -269,9 +274,11 @@ class Database:
             return self.info
 
         if self.getname() == '*':
-            self.info = "This special database will search all databases on the system."
+            self.info = ("This special database will search all databases "
+                         "on the system.")
         elif self.getname() == '!':
-            self.info = "This special database will return matches from the first matching database."
+            self.info = ("This special database will return matches from "
+                         "the first matching database.")
         else:
             self.conn.sendcommand("SHOW INFO " + self.name)
             self.info = "\n".join(self.conn.get100result()[1])
@@ -289,9 +296,10 @@ class Database:
         the same as from Connection.define()."""
         return self.conn.match(self.getname(), strategy, word)
 
+
 class Definition:
     """An object corresponding to a single definition."""
-    def __init__(self, dictconn, db, word, defstr = None):
+    def __init__(self, dictconn, db, word, defstr=None):
         """Instantiate the object.  Requires: a Connection object,
         a Database object (NOT corresponding to '*' or '!' databases),
         a word.  Optional: a definition string.  If not supplied,
@@ -309,7 +317,8 @@ class Definition:
         """Get the definition string (the actual content) of this
         definition."""
         if not self.defstr:
-            self.defstr = self.conn.define(self.getdb().getname(), self.word)[0].getdefstr()
+            self.defstr = self.conn.define(self.getdb().getname(),
+                                           self.word)[0].getdefstr()
         return self.defstr
 
     def getword(self):
